@@ -7,6 +7,8 @@ run bash -c 'echo ok' | grep -qx ok
 run dumb-init --version 2>&1 | grep -q 1.2.5
 run bash -c 'dpkg --audit | wc -l' | grep -qx 0
 run bash -c 'export DEBIAN_FRONTEND=noninteractive; apt-get update -qq && apt-get install -y -qq --no-install-recommends jq >/dev/null && jq --version'
+run gosu nobody id -u | grep -qx 65534
+run gosu --version | grep -q '^1.20'
 docker run --rm --user 65534:65534 "$IMAGE" id -u | grep -qx 65534
 run bash -c 'export DEBIAN_FRONTEND=noninteractive; apt-get update -qq && apt-get install -y -qq --no-install-recommends curl tzdata cron adduser >/dev/null && curl --version | head -1'
 
