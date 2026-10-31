@@ -1,6 +1,9 @@
 # Debian Base Image
 [![Build Status](https://travis-ci.org/telephoneorg/debian.svg?branch=master)](https://travis-ci.org/telephoneorg/debian) [![Docker Pulls](https://img.shields.io/docker/pulls/telephoneorg/debian.svg)](https://hub.docker.com/r/telephoneorg/debian/) [![Github Repo](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/telephoneorg/debian)
 
+## Debian 13 (trixie)
+A rebuilt image for Debian 13 lives in [trixie/](trixie/README.md). It is 22.5MB compressed on arm64, against 30.2MB for `debian:trixie-slim`, and builds from a plain Dockerfile with mmdebstrap. Everything below describes the original jessie and stretch build in `base-repo/`, which depends on TurnKey's fab and chanko tools and does not run on trixie.
+
 ## Maintainer
 Joe Black | <me@joeblack.nyc> | [github](https://github.com/joeblackwaslike)
 
