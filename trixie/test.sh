@@ -13,6 +13,10 @@ run bash -c 'export DEBIAN_FRONTEND=noninteractive; apt-get update -qq && apt-ge
 name=tiny-sigterm-$$
 docker run -d --name "$name" "$IMAGE" bash -c 'sleep 60' >/dev/null
 sleep 1
+run bash -c '/usr/sbin/policy-rc.d; test $? -eq 101'
+run bash -c 'export DEBIAN_FRONTEND=noninteractive; apt-get update -qq && ! ls /var/lib/apt/lists | grep -qE "_(Packages|Sources|Release)$"'
+run bash -c 'export DEBIAN_FRONTEND=noninteractive; apt-get update -qq && apt-get install -y -qq --no-install-recommends jq >/dev/null && apt-get -s autoremove | grep -q "^0 upgraded, 0 newly installed, 0 to remove"'
+
 start=$(date +%s)
 docker stop -t 20 "$name" >/dev/null
 docker rm "$name" >/dev/null

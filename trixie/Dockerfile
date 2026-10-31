@@ -24,8 +24,10 @@ RUN set -eux; \
       "https://github.com/Yelp/dumb-init/releases/download/v${DUMB_INIT_VERSION}/dumb-init_${DUMB_INIT_VERSION}_${arch}"; \
     echo "$sha  /rootfs/usr/bin/dumb-init" | sha256sum -c -; \
     chmod 0755 /rootfs/usr/bin/dumb-init
-RUN printf 'APT::Install-Recommends "false";\nAPT::Install-Suggests "false";\nAcquire::Languages "none";\n' \
+RUN printf 'APT::Install-Recommends "false";\nAPT::Install-Suggests "false";\nAPT::AutoRemove::RecommendsImportant "false";\nAPT::AutoRemove::SuggestsImportant "false";\nAcquire::Languages "none";\nAcquire::GzipIndexes "true";\nAcquire::CompressionTypes::Order:: "gz";\n' \
       > /rootfs/etc/apt/apt.conf.d/99tiny; \
+    printf '#!/bin/sh\nexit 101\n' > /rootfs/usr/sbin/policy-rc.d; \
+    chmod 0755 /rootfs/usr/sbin/policy-rc.d; \
     rm -f /rootfs/etc/apt/sources.list; \
     printf 'Types: deb\nURIs: http://deb.debian.org/debian\nSuites: trixie trixie-updates\nComponents: main\nSigned-By: /usr/share/keyrings/debian-archive-keyring.pgp\n\nTypes: deb\nURIs: http://deb.debian.org/debian-security\nSuites: trixie-security\nComponents: main\nSigned-By: /usr/share/keyrings/debian-archive-keyring.pgp\n' \
       > /rootfs/etc/apt/sources.list.d/debian.sources; \
