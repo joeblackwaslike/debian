@@ -33,4 +33,5 @@ jobs:
         run: docker build --pull -t debian-tiny:trixie .
 
       - name: Smoke test
+        shell: bash
         run: ./test.sh debian-tiny:trixie | tee -a "$GITHUB_STEP_SUMMARY"
