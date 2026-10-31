@@ -6,7 +6,8 @@ ARG DUMB_INIT_SHA256_AMD64=e874b55f3279ca41415d290c512a7ba9d08f98041b28ae7c2acb1
 ARG DUMB_INIT_SHA256_ARM64=b7d648f97154a99c539b63c55979cd29f005f88430fb383007fe3458340b795e
 RUN apt-get update -qq && apt-get install -y -qq --no-install-recommends mmdebstrap ca-certificates curl binutils >/dev/null
 
-RUN mmdebstrap --variant=minbase --include=bash,apt,dpkg,ca-certificates \
+RUN mmdebstrap --variant=custom \
+      --include=bash,apt,dpkg,ca-certificates,base-files,base-passwd,coreutils,dash,grep,sed,tar,gzip,findutils,debconf,libc-bin,mawk,diffutils,perl-base,init-system-helpers \
       --dpkgopt='path-exclude=/usr/share/doc/*' --dpkgopt='path-include=/usr/share/doc/*/copyright' \
       --dpkgopt='path-exclude=/usr/share/man/*' --dpkgopt='path-exclude=/usr/share/info/*' \
       --dpkgopt='path-exclude=/usr/share/locale/*' --dpkgopt='path-include=/usr/share/locale/locale.alias' \
