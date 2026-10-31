@@ -1,3 +1,0 @@
-apt
-gpgv            /* needed to verify apt signatures */
-mawk            /* needed to provide awk to base-files */
