@@ -1,5 +1,7 @@
 # debian-tiny (Debian 13 trixie)
 
+[![CI](https://github.com/joeblackwaslike/debian/actions/workflows/ci.yml/badge.svg)](https://github.com/joeblackwaslike/debian/actions/workflows/ci.yml)
+
 A small glibc Debian base image with bash, dpkg, apt and working HTTPS. It is built from an explicit package list instead of Debian's minbase set, then stripped of docs, man pages, locales, extra charsets and apt caches.
 
 Measured on arm64 against `debian:trixie-slim`:

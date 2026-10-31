@@ -5,6 +5,7 @@ The repo now builds a single Debian 13 (trixie) image from its root.
 * Includes dumb-init 1.2.5 and gosu 1.20 (checksum-pinned, amd64 and arm64), openssl, and apt sources over https.
 * 22.5MB compressed and 62MB on disk on arm64, against 30.2MB and 104MB for `debian:trixie-slim`.
 * `test.sh` is the smoke test. goss, the container-utils scripts and the entrypoint.d layout are not ported.
+* GitHub Actions replaces Travis: every push to master and every pull request builds the image on native amd64 and arm64 runners and runs `test.sh`. Actions are pinned by commit SHA, with a monthly Dependabot update.
 * Removed the jessie and stretch build (`base-repo/`, `scripts/`, `templates/`, `tests/`, the Makefile and `.travis.yml`). It depended on TurnKey's fab and chanko tools and does not run on trixie. It is still in git history at 99d68eb.
 
 ## 0.1.2
