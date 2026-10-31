@@ -22,4 +22,7 @@ rm -rf "$R"/usr/lib/*-linux-gnu/perl-base/unicore \
        "$R"/usr/share/zoneinfo/{right,posix,Antarctica,Arctic}
 
 find "$R"/usr/bin "$R"/usr/sbin "$R"/usr/lib -type f -exec sh -c '
-  for f; do head -c4 "$f" | grep -q "^.ELF" && strip --strip-unneeded "$f" 2>/dev/null || true; done' sh {} +
+  for f; do
+    head -c4 "$f" | grep -q "^.ELF" || continue
+    strip --strip-unneeded "$f" || echo "strip failed: $f" >&2
+  done' sh {} +

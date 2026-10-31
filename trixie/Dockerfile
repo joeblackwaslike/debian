@@ -15,13 +15,14 @@ RUN mmdebstrap --variant=custom \
       --dpkgopt='path-exclude=/usr/share/man/*' --dpkgopt='path-exclude=/usr/share/info/*' \
       --dpkgopt='path-exclude=/usr/share/locale/*' --dpkgopt='path-include=/usr/share/locale/locale.alias' \
       --dpkgopt='path-exclude=/usr/share/lintian/*' \
-      trixie /rootfs http://deb.debian.org/debian
+      trixie /rootfs https://deb.debian.org/debian
 
 COPY strip.sh /strip.sh
 RUN set -eux; \
     case "$TARGETARCH" in \
       amd64) arch=x86_64; sha=$DUMB_INIT_SHA256_AMD64; gosu_sha=$GOSU_SHA256_AMD64 ;; \
       arm64) arch=aarch64; sha=$DUMB_INIT_SHA256_ARM64; gosu_sha=$GOSU_SHA256_ARM64 ;; \
+      *) echo "unsupported TARGETARCH: $TARGETARCH" >&2; exit 1 ;; \
     esac; \
     curl -fsSL -o /rootfs/usr/bin/dumb-init \
       "https://github.com/Yelp/dumb-init/releases/download/v${DUMB_INIT_VERSION}/dumb-init_${DUMB_INIT_VERSION}_${arch}"; \
