@@ -18,7 +18,7 @@ run bash -c 'export DEBIAN_FRONTEND=noninteractive; apt-get update -qq && apt-ge
 
 run openssl version | grep -q '^OpenSSL 3'
 run bash -c 'export DEBIAN_FRONTEND=noninteractive; apt-get update 2>&1 | grep -q "Get:1 https://deb.debian.org"'
-run bash -c 'export DEBIAN_FRONTEND=noninteractive; apt-get update -qq && apt-get install -y -qq --no-install-recommends curl >/dev/null && curl -fsS -o /dev/null https://github.com; curl -sS --max-time 15 https://self-signed.badssl.com/ -o /dev/null; rc=$?; echo "curl_rc=$rc"; test "$rc" -eq 60'
+run bash -ec 'export DEBIAN_FRONTEND=noninteractive; apt-get update -qq; apt-get install -y -qq --no-install-recommends curl >/dev/null; curl -fsS -o /dev/null https://github.com; rc=0; curl -sS --max-time 15 https://self-signed.badssl.com/ -o /dev/null || rc=$?; echo "curl_rc=$rc"; test "$rc" -eq 60'
 
 name=tiny-sigterm-$$
 cleanup() { docker rm -f "$name" >/dev/null 2>&1 || true; }
