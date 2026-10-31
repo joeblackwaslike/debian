@@ -19,8 +19,7 @@ for g in "$R"/usr/lib/*-linux-gnu/gconv; do
 done
 
 rm -rf "$R"/usr/lib/*-linux-gnu/perl-base/unicore \
-       "$R"/usr/share/zoneinfo/{right,posix,Antarctica,Arctic} \
-       "$R"/usr/bin/openssl
+       "$R"/usr/share/zoneinfo/{right,posix,Antarctica,Arctic}
 
 find "$R"/usr/bin "$R"/usr/sbin "$R"/usr/lib -type f -exec sh -c '
   for f; do head -c4 "$f" | grep -q "^.ELF" && strip --strip-unneeded "$f" 2>/dev/null || true; done' sh {} +

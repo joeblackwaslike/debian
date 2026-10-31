@@ -19,6 +19,10 @@ run bash -c '/usr/sbin/policy-rc.d; test $? -eq 101'
 run bash -c 'export DEBIAN_FRONTEND=noninteractive; apt-get update -qq && ! ls /var/lib/apt/lists | grep -qE "_(Packages|Sources|Release)$"'
 run bash -c 'export DEBIAN_FRONTEND=noninteractive; apt-get update -qq && apt-get install -y -qq --no-install-recommends jq >/dev/null && apt-get -s autoremove | grep -q "^0 upgraded, 0 newly installed, 0 to remove"'
 
+run openssl version | grep -q '^OpenSSL 3'
+run bash -c 'export DEBIAN_FRONTEND=noninteractive; apt-get update 2>&1 | grep -q "Get:1 https://deb.debian.org"'
+run bash -c 'export DEBIAN_FRONTEND=noninteractive; apt-get update -qq && apt-get install -y -qq --no-install-recommends curl >/dev/null && curl -fsS -o /dev/null https://github.com && ! curl -sS --max-time 15 https://self-signed.badssl.com/ -o /dev/null'
+
 start=$(date +%s)
 docker stop -t 20 "$name" >/dev/null
 docker rm "$name" >/dev/null

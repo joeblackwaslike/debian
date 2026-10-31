@@ -36,7 +36,7 @@ RUN printf 'APT::Install-Recommends "false";\nAPT::Install-Suggests "false";\nAP
     printf '#!/bin/sh\nexit 101\n' > /rootfs/usr/sbin/policy-rc.d; \
     chmod 0755 /rootfs/usr/sbin/policy-rc.d; \
     rm -f /rootfs/etc/apt/sources.list; \
-    printf 'Types: deb\nURIs: http://deb.debian.org/debian\nSuites: trixie trixie-updates\nComponents: main\nSigned-By: /usr/share/keyrings/debian-archive-keyring.pgp\n\nTypes: deb\nURIs: http://deb.debian.org/debian-security\nSuites: trixie-security\nComponents: main\nSigned-By: /usr/share/keyrings/debian-archive-keyring.pgp\n' \
+    printf 'Types: deb\nURIs: https://deb.debian.org/debian\nSuites: trixie trixie-updates\nComponents: main\nSigned-By: /usr/share/keyrings/debian-archive-keyring.pgp\n\nTypes: deb\nURIs: https://deb.debian.org/debian-security\nSuites: trixie-security\nComponents: main\nSigned-By: /usr/share/keyrings/debian-archive-keyring.pgp\n' \
       > /rootfs/etc/apt/sources.list.d/debian.sources; \
     bash /strip.sh /rootfs
 
