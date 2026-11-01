@@ -15,6 +15,7 @@ run bash -c 'export DEBIAN_FRONTEND=noninteractive; apt-get update -qq && apt-ge
 run bash -c '/usr/sbin/policy-rc.d; test $? -eq 101'
 run bash -c 'export DEBIAN_FRONTEND=noninteractive; apt-get update -qq && ! ls /var/lib/apt/lists | grep -qE "_(Packages|Sources|Release)$"'
 run bash -c 'export DEBIAN_FRONTEND=noninteractive; apt-get update -qq && apt-get install -y -qq --no-install-recommends jq >/dev/null && apt-get -s autoremove | grep -q "^0 upgraded, 0 newly installed, 0 to remove"'
+run bash -c 'export DEBIAN_FRONTEND=noninteractive; apt-get update -qq && apt-get install -y -qq --no-install-recommends jq >/dev/null && ! ls /var/cache/apt/archives/*.deb /var/cache/apt/*.bin 2>/dev/null | grep -q .'
 
 run openssl version | grep -q '^OpenSSL 3'
 run bash -c 'export DEBIAN_FRONTEND=noninteractive; apt-get update 2>&1 | grep -q "Get:1 https://deb.debian.org"'

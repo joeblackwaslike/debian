@@ -34,6 +34,8 @@ RUN set -eux; \
     chmod 0755 /rootfs/usr/bin/gosu
 RUN printf 'APT::Install-Recommends "false";\nAPT::Install-Suggests "false";\nAPT::AutoRemove::RecommendsImportant "false";\nAPT::AutoRemove::SuggestsImportant "false";\nAcquire::Languages "none";\nAcquire::GzipIndexes "true";\nAcquire::CompressionTypes::Order:: "gz";\n' \
       > /rootfs/etc/apt/apt.conf.d/99tiny; \
+    printf 'DPkg::Post-Invoke { "rm -f /var/cache/apt/archives/*.deb /var/cache/apt/archives/partial/*.deb /var/cache/apt/*.bin || true"; };\nAPT::Update::Post-Invoke { "rm -f /var/cache/apt/archives/*.deb /var/cache/apt/archives/partial/*.deb /var/cache/apt/*.bin || true"; };\nDir::Cache::pkgcache "";\nDir::Cache::srcpkgcache "";\n' \
+      > /rootfs/etc/apt/apt.conf.d/docker-clean; \
     printf '#!/bin/sh\nexit 101\n' > /rootfs/usr/sbin/policy-rc.d; \
     chmod 0755 /rootfs/usr/sbin/policy-rc.d; \
     rm -f /rootfs/etc/apt/sources.list; \
