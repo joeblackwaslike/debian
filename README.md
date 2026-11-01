@@ -23,6 +23,9 @@ The amd64 build is about the same size. Before openssl was added back it measure
 - openssl and the CA bundle. apt sources point at `https://deb.debian.org`.
 - A `policy-rc.d` that exits 101, so installing a service package does not try to start the daemon.
 - apt set to skip recommends and suggests, keep package indexes gzipped, and not treat recommends or suggests as reasons to keep a package on autoremove.
+- A `docker-clean` apt config, copied from Debian's official images. After every dpkg run and every `apt-get update` it deletes downloaded `.deb` files, and apt never writes `pkgcache.bin` or `srcpkgcache.bin`.
+
+Images built on this one should stay small too. Without `docker-clean`, `apt-get install jq` leaves three `.deb` files and both binary caches in the layer. `docker-clean` does the same as `apt-get clean` and keeps the package indexes in `/var/lib/apt/lists`, so `apt-get install a && apt-get install b` still works in one `RUN`. End that `RUN` with `rm -rf /var/lib/apt/lists/*` to drop the indexes. To keep the `.deb` files, delete `/etc/apt/apt.conf.d/docker-clean`.
 
 dumb-init and gosu are downloaded at build time and checked against pinned sha256 sums for amd64 and arm64.
 
@@ -50,7 +53,7 @@ The entrypoint is `dumb-init --` and the default command is `bash`.
 ./test.sh debian-tiny:trixie
 ```
 
-The script runs the image and checks that bash and dumb-init run, `dpkg --audit` is clean, and apt can update and install jq, curl, tzdata, cron and adduser. It also checks gosu, `--user`, `policy-rc.d`, gzipped indexes, autoremove, openssl, an HTTPS apt fetch, certificate verification (github.com loads, a self-signed host is rejected) and SIGTERM forwarding. It ends by printing both sizes. The SIGTERM check failed once when I ran the amd64 image under emulation on an arm64 Mac, and I did not look into why.
+The script runs the image and checks that bash and dumb-init run, `dpkg --audit` is clean, and apt can update and install jq, curl, tzdata, cron and adduser. It also checks gosu, `--user`, `policy-rc.d`, gzipped indexes, autoremove, that installs leave no `.deb` files or binary caches behind, openssl, an HTTPS apt fetch, certificate verification (github.com loads, a self-signed host is rejected) and SIGTERM forwarding. It ends by printing both sizes. The SIGTERM check failed once when I ran the amd64 image under emulation on an arm64 Mac, and I did not look into why.
 
 ## How it is built
 
