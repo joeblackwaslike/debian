@@ -61,7 +61,7 @@ The script runs the image and checks that bash and dumb-init run, `dpkg --audit`
 
 1. `mmdebstrap --variant=custom` installs the package list and its dependencies into `/rootfs`, with dpkg `path-exclude` rules so docs, man pages, info and locale files are never unpacked.
 2. [strip.sh](strip.sh) removes what is left: apt lists and caches, logs, most gconv charsets (UTF-8, UTF-16, UTF-32 and ISO-8859-1 stay), perl unicore tables, extra zoneinfo, bash completion and debconf caches.
-3. dumb-init, gosu, the apt config and `policy-rc.d` go in.
+3. The [overlay/](overlay) tree — the shell setup, `path-helper`, `fixattrs` — is copied onto `/rootfs`. dumb-init, gosu, the apt config, `policy-rc.d`, `/etc/dircolors` and `/root`'s skel files go in.
 4. A `FROM scratch` stage copies the rootfs into the final image.
 
 The first attempt used `--variant=minbase` and landed only a few MB under `trixie-slim`, because minbase installs every Essential package. Building from a list got the size down. A custom list needs three packages that minbase supplies for free. dpkg wants `diff` (diffutils), the debconf and libc6 postinst scripts run perl (perl-base), and the apt and dpkg postinst scripts call `deb-systemd-helper` (init-system-helpers).
