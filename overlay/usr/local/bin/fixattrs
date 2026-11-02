@@ -159,7 +159,7 @@ function apply-file {
     local file="$1"
     local path recursive owner fmode dmode
     log::m-info ": $file"
-    while read path recursive owner fmode dmode || [[ -n $path ]]; do
+    while read -r path recursive owner fmode dmode || [[ -n $path ]]; do
         path="${path//'~'/$HOME}"
         [[ -n $path ]] && path=$(realpath -m -- "$path")
         if path-is-sane "$path"; then

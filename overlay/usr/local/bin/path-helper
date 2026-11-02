@@ -46,7 +46,7 @@ function path-not-in-current-paths {
 function paths-from-file {
     local file="$1"
     local path paths
-    while read path || [[ -n $path ]]; do
+    while read -r path || [[ -n $path ]]; do
         path="${path//'~'/$HOME}"
         if path-exists "$path"; then
             paths+=($path)
