@@ -15,6 +15,7 @@
 # /root/test-dir-four/test-file-two true joe:joe 0666 0777
 
 readonly FIXATTRS_PATH=/etc/fixattrs.d
+status=0
 readonly PROTECTED_ROOTS=(/proc /sys /dev /boot)
 readonly PROTECTED_PATHS=(/etc /var /lib /run /bin /home /mnt /usr /sbin /lib /lib64 /usr/bin /usr/include /usr/lib /usr/local /usr/sbin /usr/share /usr/src /var/lib /var/local /var/log /var/opt /var/lock /var/run)
 
@@ -111,7 +112,7 @@ function set-ownership {
         && cmd+=(-R)
     cmd+=("$owner" "$path")
     set -- ${cmd[@]}
-    (shopt -s dotglob; "$@")
+    (shopt -s dotglob; "$@") || status=1
 }
 
 function set-permissions {
@@ -131,12 +132,12 @@ function set-permissions {
     dcmd+=(-type d)
     dcmd+=(-exec chmod $dmode {} \+)
     set -- ${dcmd[@]}
-    "$@"
+    "$@" || status=1
 
     fcmd+=(-type f)
     fcmd+=(-exec chmod $fmode {} \+)
     set -- ${fcmd[@]}
-    "$@"
+    "$@" || status=1
 }
 
 function log-msg {
@@ -185,3 +186,4 @@ function main {
 }
 
 main
+exit $status

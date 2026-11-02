@@ -1,3 +1,5 @@
+[ -n "${BASH_VERSION-}" ] || return
+
 function log::get-time {
     date '+%Y-%m-%d %H:%M:%S'
 }
@@ -59,13 +61,8 @@ function clear {
     echo -ne '\0033\0143'
 }
 function _get-container-id {
-    local id
-    id=$(grep -m1 docker /proc/1/cgroup)
-    if [[ -n $id ]]; then
-        basename "$id"
-    else
-        grep -oE -m1 'containers/[0-9a-f]{64}' /proc/self/mountinfo | cut -d/ -f2
-    fi
+    grep -oE -m1 '[0-9a-f]{64}' /proc/1/cgroup | head -1 | grep . \
+        || grep -oE -m1 'containers/[0-9a-f]{64}' /proc/self/mountinfo | head -1 | cut -d/ -f2
 }
 function container-id {
     local cid
@@ -105,7 +102,7 @@ function linux::cmd::does-not-exist {
 }
 function linux::cap::is-enabled {
     local name="$1"
-    capsh --print | grep -q cap_${name,,}
+    capsh --print | grep -qw "cap_${name,,}"
 }
 function linux::cap::is-disabled {
     ! linux::cap::is-enabled "$1"

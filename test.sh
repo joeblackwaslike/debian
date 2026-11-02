@@ -27,6 +27,11 @@ grep -qx 'LANG=C.UTF-8' <<<"$out"
 grep -qx 'LS_COLORS=set' <<<"$out"
 grep -qF '\u ' <<<"$out" && grep -qF '\w' <<<"$out" && grep -qF '\h ' <<<"$out" && grep -qF '❯' <<<"$out"
 run bash -lc container-id | grep -qE '^[0-9a-f]{12}$'
+run sh -lc 'echo ok' 2>&1 | grep -qx ok
+test -z "$(run bash -c 'mv /etc/paths.d /tmp/; echo "# comment" > /etc/environment.d/c; bash -lc true' 2>&1)"
+docker run --rm -t -e TERM=screen-256color "$IMAGE" bash -ic 'echo "$TERM"' 2>/dev/null | tr -d '\r' | grep -qx screen-256color
+run bash -c 'echo FOO=bar > /etc/environment.d/foo; bash -lc "env"' | grep -qx FOO=bar
+run bash -c 'mkdir -p /tmp/y; echo "/tmp/y false nosuchuser:nogroup 0640 0750" > /etc/fixattrs.d/t; ! fixattrs >/dev/null 2>&1'
 
 run openssl version | grep -q '^OpenSSL 3'
 run bash -c 'export DEBIAN_FRONTEND=noninteractive; apt-get update 2>&1 | grep -q "Get:1 https://deb.debian.org"'

@@ -1,12 +1,13 @@
+[ -n "${BASH_VERSION-}" ] || return
 [ -z "$PS1" ] && return
 
-if [ $TERM != dumb ]
+if [ "$TERM" != dumb ]
 then
     if [ -f "/etc/dircolors" ] ; then
         eval $(dircolors -b /etc/dircolors)
 
         if [ -f "$HOME/.dircolors" ] ; then
-            eval $(dircolors -b $HOME/.dircolors)
+            eval $(dircolors -b "$HOME/.dircolors")
         fi
     fi
 

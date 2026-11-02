@@ -63,6 +63,7 @@ function get-new-paths {
     local file
     local new_paths=()
     for file in $PH_PATHS_PATH/*; do
+        [[ -f $file ]] || continue
         new_paths+=($(paths-from-file "$file"))
     done
     echo "${new_paths[@]}"
