@@ -17,6 +17,17 @@ run bash -c 'export DEBIAN_FRONTEND=noninteractive; apt-get update -qq && ! ls /
 run bash -c 'export DEBIAN_FRONTEND=noninteractive; apt-get update -qq && apt-get install -y -qq --no-install-recommends jq >/dev/null && apt-get -s autoremove | grep -q "^0 upgraded, 0 newly installed, 0 to remove"'
 run bash -c 'export DEBIAN_FRONTEND=noninteractive; apt-get update -qq && apt-get install -y -qq --no-install-recommends jq >/dev/null && ! ls /var/cache/apt/archives/*.deb /var/cache/apt/*.bin 2>/dev/null | grep -q .'
 
+run bash -c 'mkdir -p ~/bin && path-helper' | grep -q '^PATH=/root/bin:'
+run bash -lc 'mkdir -p ~/bin; exec bash -lc "echo \$PATH"' | grep -q '^/root/bin:'
+run bash -ec 'mkdir -p /tmp/x; touch /tmp/x/f; echo "/tmp/x true nobody:nogroup 0640 0750" > /etc/fixattrs.d/t; fixattrs >/dev/null 2>&1; stat -c "%U %a" /tmp/x /tmp/x/f' | tr '\n' ' ' | grep -qx 'nobody 750 nobody 640 '
+out=$(docker run --rm -t "$IMAGE" bash -ic 'type -t log::m-info; alias ls; echo "LANG=$LANG"; echo "LS_COLORS=${LS_COLORS:+set}"; echo "$PS1"' 2>/dev/null | tr -d '\r')
+grep -qx function <<<"$out"
+grep -q -- '--color=auto' <<<"$out"
+grep -qx 'LANG=C.UTF-8' <<<"$out"
+grep -qx 'LS_COLORS=set' <<<"$out"
+grep -qF '\u ' <<<"$out" && grep -qF '\w' <<<"$out" && grep -qF '\h ' <<<"$out" && grep -qF '❯' <<<"$out"
+run bash -lc container-id | grep -qE '^[0-9a-f]{12}$'
+
 run openssl version | grep -q '^OpenSSL 3'
 run bash -c 'export DEBIAN_FRONTEND=noninteractive; apt-get update 2>&1 | grep -q "Get:1 https://deb.debian.org"'
 run bash -ec 'export DEBIAN_FRONTEND=noninteractive; apt-get update -qq; apt-get install -y -qq --no-install-recommends curl >/dev/null; curl -fsS -o /dev/null https://github.com; rc=0; curl -sS --max-time 15 https://self-signed.badssl.com/ -o /dev/null || rc=$?; echo "curl_rc=$rc"; test "$rc" -eq 60'

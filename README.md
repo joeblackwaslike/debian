@@ -24,6 +24,8 @@ The amd64 build is about the same size. Before openssl was added back it measure
 - A `policy-rc.d` that exits 101, so installing a service package does not try to start the daemon.
 - apt set to skip recommends and suggests, keep package indexes gzipped, and not treat recommends or suggests as reasons to keep a package on autoremove.
 - A `docker-clean` apt config, copied from Debian's official images. After every dpkg run and every `apt-get update` it deletes downloaded `.deb` files, and apt never writes `pkgcache.bin` or `srcpkgcache.bin`.
+- The shell setup from the old image, for interactive bash. The prompt follows my local oh-my-posh theme on two lines, `user in /full/path` and then `host ❯`, with a Nerd Font root marker when running as root. The setup also adds `ls` and `grep` color aliases, `LANG=C.UTF-8`, and the log, linux, shell and net helper functions in `/etc/profile.d/40-functions.sh`. `~/.bashrc` sources `/etc/profile`, so a plain `docker run -it` shell gets all of it.
+- `path-helper` and `fixattrs`. `path-helper` puts every existing directory listed in `/etc/paths.d/*` in front of `PATH`, and `~/bin` is listed by default. `fixattrs` reads `path recursive user:group fmode dmode` lines from `/etc/fixattrs.d/*` and applies them. `/etc/environment` sources every file in `/etc/environment.d/` and exports what they set.
 
 Images built on this one should stay small too. Without `docker-clean`, `apt-get install jq` leaves three `.deb` files and both binary caches in the layer. `docker-clean` does the same as `apt-get clean` and keeps the package indexes in `/var/lib/apt/lists`, so `apt-get install a && apt-get install b` still works in one `RUN`. End that `RUN` with `rm -rf /var/lib/apt/lists/*` to drop the indexes. To keep the `.deb` files, delete `/etc/apt/apt.conf.d/docker-clean`.
 
@@ -53,7 +55,7 @@ The entrypoint is `dumb-init --` and the default command is `bash`.
 ./test.sh debian-tiny:trixie
 ```
 
-The script runs the image and checks that bash and dumb-init run, `dpkg --audit` is clean, and apt can update and install jq, curl, tzdata, cron and adduser. It also checks gosu, `--user`, `policy-rc.d`, gzipped indexes, autoremove, that installs leave no `.deb` files or binary caches behind, openssl, an HTTPS apt fetch, certificate verification (github.com loads, a self-signed host is rejected) and SIGTERM forwarding. It ends by printing both sizes. The SIGTERM check failed once when I ran the amd64 image under emulation on an arm64 Mac, and I did not look into why.
+The script runs the image and checks that bash and dumb-init run, `dpkg --audit` is clean, and apt can update and install jq, curl, tzdata, cron and adduser. It also checks gosu, `--user`, `policy-rc.d`, gzipped indexes, autoremove, that installs leave no `.deb` files or binary caches behind, openssl, `path-helper`, `fixattrs`, the interactive prompt and aliases, `container-id`, an HTTPS apt fetch, certificate verification (github.com loads, a self-signed host is rejected) and SIGTERM forwarding. It ends by printing both sizes. The SIGTERM check failed once when I ran the amd64 image under emulation on an arm64 Mac, and I did not look into why.
 
 ## How it is built
 
@@ -77,4 +79,6 @@ Things tried and left out:
 
 ## What the old image had that this one does not
 
-The jessie and stretch image (last present at [99d68eb](https://github.com/joeblackwaslike/debian/tree/99d68eb)) also shipped goss, the container-utils scripts, liboverridehostname and the `/etc/entrypoint.d`, `/etc/profile.d` and `/etc/paths.d` layout. None of that is ported. The old build also drove debootstrap through TurnKey's fab and chanko tools, which do not run on trixie.
+The jessie and stretch image (last present at [99d68eb](https://github.com/joeblackwaslike/debian/tree/99d68eb)) also shipped goss, the other container-utils scripts (kube-hostname-fix, kube-search-domains, erlang-cookie, set-limits, detect-proxy), the kube, kazoo and erlang helper functions, liboverridehostname and the `/etc/entrypoint.d` layout. None of that is ported. The old build also drove debootstrap through TurnKey's fab and chanko tools, which do not run on trixie.
+
+The shell setup above comes from that image's `unit.d` and from [container-utils v0.2](https://github.com/telephoneorg/container-utils/tree/v0.2). I fixed four bugs while porting it. `linux::cmd::does-not-exist` was missing its `!`, `net::is-short-hostname` called a function that did not exist, `net::is-long-hostname` called the missing `hostname` binary, and `container-id` only understood cgroup v1. `get-ipv4`, `net::get-mtu` and `linux::cap::*` print nothing unless you install iproute2 or libcap2-bin.

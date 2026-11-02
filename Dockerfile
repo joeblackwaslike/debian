@@ -18,6 +18,7 @@ RUN mmdebstrap --variant=custom \
       trixie /rootfs https://deb.debian.org/debian
 
 COPY strip.sh /strip.sh
+COPY overlay/ /rootfs/
 RUN set -eux; \
     case "$TARGETARCH" in \
       amd64) arch=x86_64; sha=$DUMB_INIT_SHA256_AMD64; gosu_sha=$GOSU_SHA256_AMD64 ;; \
@@ -41,6 +42,10 @@ RUN printf 'APT::Install-Recommends "false";\nAPT::Install-Suggests "false";\nAP
     rm -f /rootfs/etc/apt/sources.list; \
     printf 'Types: deb\nURIs: https://deb.debian.org/debian\nSuites: trixie trixie-updates\nComponents: main\nSigned-By: /usr/share/keyrings/debian-archive-keyring.pgp\n\nTypes: deb\nURIs: https://deb.debian.org/debian-security\nSuites: trixie-security\nComponents: main\nSigned-By: /usr/share/keyrings/debian-archive-keyring.pgp\n' \
       > /rootfs/etc/apt/sources.list.d/debian.sources; \
+    dircolors -p > /rootfs/etc/dircolors; \
+    cp -rT /rootfs/etc/skel /rootfs/root; \
+    rm -f /rootfs/etc/*.d/.keep; \
+    chmod 0755 /rootfs/usr/local/bin/path-helper /rootfs/usr/local/bin/fixattrs; \
     bash /strip.sh /rootfs
 
 FROM scratch

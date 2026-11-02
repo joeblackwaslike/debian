@@ -1,0 +1,2 @@
+# populate environment
+. /etc/environment
