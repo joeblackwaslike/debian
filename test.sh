@@ -32,6 +32,11 @@ test -z "$(run bash -c 'mv /etc/paths.d /tmp/; echo "# comment" > /etc/environme
 docker run --rm -t -e TERM=screen-256color "$IMAGE" bash -ic 'echo "$TERM"' 2>/dev/null | tr -d '\r' | grep -qx screen-256color
 run bash -c 'echo FOO=bar > /etc/environment.d/foo; bash -lc "env"' | grep -qx FOO=bar
 run bash -c 'mkdir -p /tmp/y; echo "/tmp/y false nosuchuser:nogroup 0640 0750" > /etc/fixattrs.d/t; ! fixattrs >/dev/null 2>&1'
+run bash -c 'echo "/tmp/.. true nobody:nogroup 0640 0750" > /etc/fixattrs.d/t; fixattrs >/dev/null 2>&1; stat -c "%U %a" / /etc' | tr '\n' ' ' | grep -qx 'root 755 root 755 '
+run bash -c 'mkdir -p /tmp/z; printf "%s" "/tmp/z false nobody:nogroup 0640 0750" > /etc/fixattrs.d/t; fixattrs >/dev/null 2>&1; stat -c %U /tmp/z' | grep -qx nobody
+run bash -c 'mkdir -p /tmp/n; printf "%s" /tmp/n > /etc/paths.d/n; path-helper' | grep -q '^PATH=/tmp/n:'
+run bash -c 'echo "/tmp false nobody:nogroup 0640 0750" > /etc/fixattrs.d/t; chmod 600 /etc/fixattrs.d/t; ! gosu nobody fixattrs >/dev/null 2>&1'
+run bash -c 'export DEBIAN_FRONTEND=noninteractive; apt-get update -qq && apt-get install -y -qq --no-install-recommends libcap2-bin >/dev/null && bash -lc "linux::cap::is-enabled chown && linux::cap::is-disabled net_admin"'
 
 run openssl version | grep -q '^OpenSSL 3'
 run bash -c 'export DEBIAN_FRONTEND=noninteractive; apt-get update 2>&1 | grep -q "Get:1 https://deb.debian.org"'

@@ -102,7 +102,7 @@ function linux::cmd::does-not-exist {
 }
 function linux::cap::is-enabled {
     local name="$1"
-    capsh --print | grep -qw "cap_${name,,}"
+    capsh --decode="$(awk '/^CapEff:/ {print $2}' /proc/self/status)" | grep -qw "cap_${name,,}"
 }
 function linux::cap::is-disabled {
     ! linux::cap::is-enabled "$1"

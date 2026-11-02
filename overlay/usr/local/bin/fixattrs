@@ -159,8 +159,9 @@ function apply-file {
     local file="$1"
     local path recursive owner fmode dmode
     log::m-info ": $file"
-    while read path recursive owner fmode dmode; do
+    while read path recursive owner fmode dmode || [[ -n $path ]]; do
         path="${path//'~'/$HOME}"
+        [[ -n $path ]] && path=$(realpath -m -- "$path")
         if path-is-sane "$path"; then
             log-msg "$path" $recursive "$owner" $fmode $dmode
             set-ownership "$path" $recursive "$owner"
@@ -179,7 +180,7 @@ function main {
     else
         log::m-info "Applying ownership and permission fixes ..."
         for file in $FIXATTRS_PATH/*; do
-            apply-file "$file"
+            apply-file "$file" || status=1
         done
         echo
     fi
