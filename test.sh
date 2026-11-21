@@ -65,6 +65,11 @@ run bash -c 'test "$(stat -c %a /etc/skel/.bashrc)" = 644'
 run bash -lc 'linux::cap::is-enabled chown; test $? -eq 2'
 test "$(run bash -ic 'type -t clear' 2>/dev/null)" = function
 run bash -c 'echo "/var/lock false nobody:nogroup 0640 0750" > /etc/fixattrs.d/t; fixattrs >/dev/null 2>&1; stat -c %U /run/lock' | grep -qx root
+run env -u HOME bash -c 'mkdir -p /srv; echo "~/srv false nobody:nogroup 0640 0750" > /etc/fixattrs.d/t; /usr/local/bin/fixattrs >/dev/null 2>&1; stat -c %U /srv' | grep -qx root
+run env PATH=/usr/bin: /usr/local/bin/path-helper | grep -q '^PATH=.*:$'
+run bash -c 'mkdir ~/bin; PATH= /usr/local/bin/path-helper' | grep -qx 'PATH=/root/bin'
+run bash -uc '. /etc/profile.d/40-functions.sh; linux::cap::show-warning net_admin' >/dev/null 2>&1
+run env -u HOME bash -c 'echo "~/tmp" > /etc/paths.d/h; ! /usr/local/bin/path-helper | grep -q "^PATH=/tmp:"'
 
 run openssl version | grep -q '^OpenSSL 3'
 run bash -c 'export DEBIAN_FRONTEND=noninteractive; apt-get update 2>&1 | grep -q "Get:1 https://deb.debian.org"'

@@ -112,6 +112,7 @@ function linux::cap::is-disabled {
 }
 function linux::cap::show-warning {
     local name="$1"
+    local _space=""
     if [[ ! $(basename "$0") = 'bash' && ! -z $(basename "$0") ]]; then
         local _module="[${3:-$(basename $0)}] "
         local _len=${#_module}
