@@ -1,4 +1,4 @@
-[ -n "${BASH_VERSION-}" ] || return
+[ -n "${BASH_VERSION-}" ] || return 0
 
 function log::get-time {
     date '+%Y-%m-%d %H:%M:%S'
@@ -20,15 +20,15 @@ function log::_show-msg {
     local type="${2:-info}"
     local symbol="${symbol_map[$type]}"
     local color="${color_map[$type]}"
-    local time="$(log::get-time) "
-    if [[ ! $(basename "$0") = 'bash' && ! -z $(basename "$0") ]]; then
-        local module="[${3:-$(basename $0)}] "
+    local time="" label="" module=""
+    if [[ -z ${minimal-} ]]; then
+        time="$(log::get-time) "
+        label="${type^^} "
     fi
-    type+=' '
-    if [ ! -z "$minimal" ]; then
-        unset time type
+    if [[ ! $(basename "$0") = 'bash' && -n $(basename "$0") ]]; then
+        module="[${3:-$(basename "$0")}] "
     fi
-    echo -e "\E[${color}m[${symbol}]\E[0m ${time}${type^^}${module}${msg}" >&2
+    printf '\e[%sm[%s]\e[0m %s%s%s%s\n' "$color" "$symbol" "$time" "$label" "$module" "$msg" >&2
 }
 function log::info {
     local msg="$@"
@@ -57,28 +57,23 @@ function log::m-error {
     local minimal=true
     log::error "$msg"
 }
-function clear {
-    echo -ne '\0033\0143'
-}
 function _get-container-id {
     grep -oE -m1 '[0-9a-f]{64}' /proc/1/cgroup | head -1 | grep . \
         || grep -oE -m1 'containers/[0-9a-f]{64}' /proc/self/mountinfo | head -1 | cut -d/ -f2
 }
 function container-id {
     local cid
-    case "$1" in
-        s|short)
-            _get-container-id | cut -c 1-12
-            ;;
+    if [[ ${1-} =~ ^(h|help)$ ]]; then
+        echo "Usage: container-id {short|full|help}"
+        return 1
+    fi
+    cid=$(_get-container-id) && [[ -n $cid ]] || return 1
+    case "${1-}" in
         f|full|l|long)
-            _get-container-id
-            ;;
-        h|help)
-            echo "Usage $0 {short|full|help}"
-            return 1
+            echo "$cid"
             ;;
         *)
-            container-id short
+            echo "${cid:0:12}"
             ;;
     esac
 }
@@ -90,6 +85,8 @@ function get-ipv4 {
         ifconfig $interface | grep 'inet ' | cut -d':' -f2 | awk '{print $1}'
     elif linux::cmd::exists 'hostname'; then
         hostname -i | head -1
+    else
+        return 1
     fi
 }
 function linux::cmd::exists {
@@ -102,17 +99,19 @@ function linux::cmd::does-not-exist {
 }
 function linux::cap::is-enabled {
     local name="$1"
+    linux::cmd::exists capsh || return 2
     capsh --decode="$(awk '/^CapEff:/ {print $2}' /proc/self/status)" | grep -qw "cap_${name,,}"
 }
 function linux::cap::is-disabled {
-    ! linux::cap::is-enabled "$1"
+    local rc=0
+    linux::cap::is-enabled "$1" || rc=$?
+    [[ $rc -eq 1 ]]
 }
 function linux::cap::show-warning {
     local name="$1"
     if [[ ! $(basename "$0") = 'bash' && ! -z $(basename "$0") ]]; then
         local _module="[${3:-$(basename $0)}] "
         local _len=${#_module}
-        # ((_len+=2))
         local _space=$(printf ' %.0s' $(seq 1 $_len))
     fi
     log::m-warn "The cap CAP_${name^^} is restricted in this container.
@@ -145,7 +144,7 @@ function linux::get-function-names {
     compgen -A function
 }
 function net::is-long-hostname {
-    [[ $USE_LONG_HOSTNAME == true || $ERLANG_HOSTNAME == 'long' || $KUBE_HOSTNAME == 'long' || $HOSTNAME =~ \. ]]
+    [[ ${USE_LONG_HOSTNAME-} == true || ${HOSTNAME-} == *.* ]]
 }
 function net::is-short-hostname {
     ! net::is-long-hostname
@@ -156,6 +155,8 @@ function net::get-mtu {
         ip -o link show $interface | awk '{print $5}'
     elif linux::cmd::exists 'ifconfig'; then
         ifconfig $interface | grep MTU | awk '{print $5}' | cut -d':' -f2
+    else
+        return 1
     fi
 }
 function shell::is-interactive {

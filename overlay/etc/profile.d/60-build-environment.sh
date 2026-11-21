@@ -1,4 +1,4 @@
-[ -n "${BASH_VERSION-}" ] || return
+[ -n "${BASH_VERSION-}" ] || return 0
 
 if [[ -d /etc/environment.d ]]; then
     for f in /etc/environment.d/*; do

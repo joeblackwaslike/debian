@@ -1,8 +1,8 @@
-#!/bin/bash -l
+#!/bin/bash
 
 # applies all files in $FIXATTRS_PATH
 
-# fixattrs file structure:
+# fixattrs file structure, one rule per line (blank lines and lines starting with # are ignored):
 # path recursive user:group fmode dmode
 
 # fixattrs file examples:
@@ -14,6 +14,12 @@
 # /root/test-dir-four/test-file-one false joe:joe 0777 0666
 # /root/test-dir-four/test-file-two true joe:joe 0666 0777
 
+# A rule with recursive=false changes only the path itself: dmode if it is a directory, fmode if it is a file.
+# The protected lists stop a typo from handing a whole system directory to someone else.
+# They refuse those directories themselves, not what is under them, and are not a security boundary.
+
+source /etc/profile.d/40-functions.sh
+
 readonly FIXATTRS_PATH=/etc/fixattrs.d
 status=0
 readonly PROTECTED_ROOTS=(/proc /sys /dev /boot)
@@ -21,14 +27,6 @@ readonly PROTECTED_PATHS=(/etc /var /lib /run /bin /home /mnt /usr /sbin /lib /l
 
 function is-directory {
     [[ -d "$1" ]]
-}
-
-function is-file {
-    [[ -a "$1" ]]
-}
-
-function dir-is-empty {
-    (($(ls -A "$1" | wc -l) == 0))
 }
 
 function get-root {
@@ -45,11 +43,12 @@ function path-is-root {
 
 function path-is-protected-root {
     local path="$1"
-    local root=$(get-root "$path")
+    local root
+    root=$(get-root "$path")
     local dir
     for dir in "${PROTECTED_ROOTS[@]}"; do
-        dir=$(get-root $dir)
-        if [[ $dir = $root ]]; then
+        dir=$(get-root "$dir")
+        if [[ $dir = "$root" ]]; then
             return 0
         fi
     done
@@ -57,10 +56,11 @@ function path-is-protected-root {
 }
 
 function path-is-protected {
-    local path=$(normalize-path "$1")
+    local path
+    path=$(normalize-path "$1")
     local dir
     for dir in "${PROTECTED_PATHS[@]}"; do
-        if [[ $dir = $path ]]; then
+        if [[ $dir = "$path" ]]; then
             return 0
         fi
     done
@@ -80,7 +80,7 @@ function path-is-sane {
     elif path-is-protected "$path"; then
         log::m-warn "path: $path is a protected path, skipping ..."
         return 1
-    elif path-is-nonexistant "$path"; then
+    elif [[ ! -e $path ]]; then
         log::m-warn "path: $path doesn't exist, skipping ..."
         return 1
     else
@@ -88,17 +88,15 @@ function path-is-sane {
     fi
 }
 
-function path-exists {
-    local path="$1"
-    if is-directory "$path" || is-file "$path"; then
-        return 0
-    else
-        return 1
-    fi
-}
-
-function path-is-nonexistant {
-    ! path-exists "$1"
+function rule-is-valid {
+    local recursive="$1"
+    local owner="$2"
+    local fmode="$3"
+    local dmode="$4"
+    [[ $recursive =~ ^(true|false)$ ]] \
+        && [[ $owner =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]*(:[A-Za-z0-9_][A-Za-z0-9_.-]*)?$ ]] \
+        && [[ $fmode =~ ^[0-7]{3,4}$ ]] \
+        && [[ $dmode =~ ^[0-7]{3,4}$ ]]
 }
 
 function set-ownership {
@@ -110,8 +108,8 @@ function set-ownership {
 
     [[ $recursive = true ]] \
         && cmd+=(-R)
-    cmd+=("$owner" "$path")
-    (shopt -s dotglob; "${cmd[@]}") || status=1
+    cmd+=(-- "$owner" "$path")
+    "${cmd[@]}" || status=1
 }
 
 function set-permissions {
@@ -120,21 +118,11 @@ function set-permissions {
     local fmode="$3"
     local dmode="$4"
 
-    local dcmd=(find "$path")
-    local fcmd=(find "$path")
+    local depth=()
+    [[ $recursive = true ]] || depth=(-maxdepth 0)
 
-    if [[ $recursive != true ]]; then
-        dcmd+=(-mindepth 0 -maxdepth 0)
-        fcmd+=(-mindepth 0 -maxdepth 1)
-    fi
-
-    dcmd+=(-type d)
-    dcmd+=(-exec chmod "$dmode" {} \+)
-    "${dcmd[@]}" || status=1
-
-    fcmd+=(-type f)
-    fcmd+=(-exec chmod "$fmode" {} \+)
-    "${fcmd[@]}" || status=1
+    find "$path" "${depth[@]}" -type d -exec chmod "$dmode" {} \+ || status=1
+    find "$path" "${depth[@]}" -type f -exec chmod "$fmode" {} \+ || status=1
 }
 
 function log-msg {
@@ -154,33 +142,49 @@ function log-msg {
 
 function apply-file {
     local file="$1"
-    local path recursive owner fmode dmode
+    local path recursive owner fmode dmode extra
     log::m-info ": $file"
-    while read -r path recursive owner fmode dmode || [[ -n $path ]]; do
-        path="${path//'~'/$HOME}"
-        [[ -n $path ]] && path=$(realpath -m -- "$path")
+    while read -r path recursive owner fmode dmode extra || [[ -n $path ]]; do
+        [[ -z $path || $path == \#* ]] && continue
+        if [[ -n $extra ]] || ! rule-is-valid "$recursive" "$owner" "$fmode" "$dmode"; then
+            log::m-warn "  malformed rule, skipping: $path $recursive $owner $fmode $dmode $extra"
+            status=1
+            continue
+        fi
+        path="${path/#\~/"$HOME"}"
+        path=$(realpath -m -- "$path") || { status=1; continue; }
         if path-is-sane "$path"; then
-            log-msg "$path" $recursive "$owner" $fmode $dmode
-            set-ownership "$path" $recursive "$owner"
-            set-permissions "$path" $recursive $fmode $dmode
+            log-msg "$path" "$recursive" "$owner" "$fmode" "$dmode"
+            set-ownership "$path" "$recursive" "$owner"
+            set-permissions "$path" "$recursive" "$fmode" "$dmode"
+        elif [[ ! -e $path ]]; then
+            status=1
         fi
     done <"$file"
 }
 
-
 function main {
-    local file
-    if ! is-directory $FIXATTRS_PATH; then
+    local file files
+    shopt -s nullglob
+    if ! is-directory "$FIXATTRS_PATH"; then
         log::m-warn "$FIXATTRS_PATH doesn't exist, no ownerships or permissions to apply"
-    elif is-directory $FIXATTRS_PATH && dir-is-empty $FIXATTRS_PATH; then
-        log::m-warn "$FIXATTRS_PATH is empty, no ownerships or permissions to apply"
-    else
-        log::m-info "Applying ownership and permission fixes ..."
-        for file in $FIXATTRS_PATH/*; do
-            apply-file "$file" || status=1
-        done
-        echo
+        return
     fi
+    files=("$FIXATTRS_PATH"/*)
+    if ((${#files[@]} == 0)); then
+        log::m-warn "$FIXATTRS_PATH is empty, no ownerships or permissions to apply"
+        return
+    fi
+    log::m-info "Applying ownership and permission fixes ..."
+    for file in "${files[@]}"; do
+        if [[ -f $file ]]; then
+            apply-file "$file" || status=1
+        else
+            log::m-warn "$file is not a regular file, skipping ..."
+            status=1
+        fi
+    done
+    echo
 }
 
 main

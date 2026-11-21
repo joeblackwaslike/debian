@@ -1,4 +1,4 @@
-[ -n "${BASH_VERSION-}" ] || return
+[ -n "${BASH_VERSION-}" ] || return 0
 [ -z "${PS1-}" ] && return
 
 if [ "$TERM" != dumb ]

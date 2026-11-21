@@ -43,6 +43,7 @@ RUN printf 'APT::Install-Recommends "false";\nAPT::Install-Suggests "false";\nAP
     printf 'Types: deb\nURIs: https://deb.debian.org/debian\nSuites: trixie trixie-updates\nComponents: main\nSigned-By: /usr/share/keyrings/debian-archive-keyring.pgp\n\nTypes: deb\nURIs: https://deb.debian.org/debian-security\nSuites: trixie-security\nComponents: main\nSigned-By: /usr/share/keyrings/debian-archive-keyring.pgp\n' \
       > /rootfs/etc/apt/sources.list.d/debian.sources; \
     dircolors -p > /rootfs/etc/dircolors; \
+    chmod 0644 /rootfs/etc/skel/.bashrc; \
     cp -rT /rootfs/etc/skel /rootfs/root; \
     rm -f /rootfs/etc/*.d/.keep; \
     chmod 0755 /rootfs/usr/local/bin/path-helper /rootfs/usr/local/bin/fixattrs; \

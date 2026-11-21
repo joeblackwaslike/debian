@@ -1,66 +1,34 @@
 #!/bin/bash
 
+# prints PATH=... with every existing directory listed in /etc/paths.d/* put in front of PATH
+# one directory per line, a leading ~ expands to $HOME, lines that are not directories are ignored
+
 readonly PH_PATHS_PATH=/etc/paths.d
 
-
-function is-directory {
-    [[ -d "$1" ]]
-}
-
-function is-file {
-    [[ -a "$1" ]]
-}
-
-function dir-is-empty {
-    (($(ls -A "$1" | wc -l) == 0))
-}
-
-function path-exists {
-    local path="$1"
-    if is-directory "$path" || is-file "$path"; then
-        return 0
-    else
-        return 1
-    fi
-}
-
-function path-is-nonexistant {
-    ! path-exists "$1"
-}
-
-function path-in-current-paths {
-    local path="$1"
-    local cpath
-    for cpath in "${current_paths[@]}"; do
-        if [[ $cpath = "$path" ]]; then
-            return 0
-        fi
+function in-paths {
+    local needle="$1" entry
+    shift
+    for entry in "$@"; do
+        [[ $entry = "$needle" ]] && return 0
     done
     return 1
 }
 
-function path-not-in-current-paths {
-    ! path-in-current-paths "$1"
-}
-
 function main {
-    is-directory $PH_PATHS_PATH || return 0
+    [[ -d $PH_PATHS_PATH ]] || return 0
 
-    local -a current_paths new_paths paths_to_add
+    local -a current_paths paths_to_add
     local file path
 
     IFS=: read -ra current_paths <<<"$PATH"
 
-    for file in $PH_PATHS_PATH/*; do
+    for file in "$PH_PATHS_PATH"/*; do
         [[ -f $file ]] || continue
         while read -r path || [[ -n $path ]]; do
-            path="${path//'~'/$HOME}"
-            path-exists "$path" && new_paths+=("$path")
+            path="${path/#\~/"$HOME"}"
+            [[ -d $path && $path != *:* ]] || continue
+            in-paths "$path" "${current_paths[@]}" "${paths_to_add[@]}" || paths_to_add+=("$path")
         done <"$file"
-    done
-
-    for path in "${new_paths[@]}"; do
-        path-not-in-current-paths "$path" && paths_to_add+=("$path")
     done
 
     local IFS=:
