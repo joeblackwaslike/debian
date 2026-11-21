@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
 env:
   IMAGE: ${{ vars.DOCKERHUB_USERNAME }}/debian-tiny
 
@@ -76,6 +80,7 @@ jobs:
           DIGEST: ${{ steps.push.outputs.digest }}
         run: |
           mkdir -p "$RUNNER_TEMP/digests"
+          : "${DIGEST:?build produced no digest}"
           touch "$RUNNER_TEMP/digests/${DIGEST#sha256:}"
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -106,28 +111,14 @@ jobs:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Check this is still the newest commit
-        id: head
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          newest=$(gh api "repos/$GITHUB_REPOSITORY/commits/master" --jq .sha)
-          if [ "$newest" = "$GITHUB_SHA" ]; then
-            echo "is_newest=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "is_newest=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::master has moved on to $newest, so latest and trixie keep pointing at the newer build"
-          fi
-
       - name: Compute tags
         id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: ${{ env.IMAGE }}
           tags: |
-            type=raw,value=latest,enable=${{ steps.head.outputs.is_newest == 'true' }}
-            type=raw,value=trixie,enable=${{ steps.head.outputs.is_newest == 'true' }}
+            type=raw,value=latest
+            type=raw,value=trixie
             type=sha,format=short
 
       - name: Create manifest list
