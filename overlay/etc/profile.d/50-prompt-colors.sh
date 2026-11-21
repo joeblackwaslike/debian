@@ -1,5 +1,5 @@
 [ -n "${BASH_VERSION-}" ] || return
-[ -z "$PS1" ] && return
+[ -z "${PS1-}" ] && return
 
 if [ "$TERM" != dumb ]
 then

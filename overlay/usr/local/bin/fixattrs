@@ -111,8 +111,7 @@ function set-ownership {
     [[ $recursive = true ]] \
         && cmd+=(-R)
     cmd+=("$owner" "$path")
-    set -- ${cmd[@]}
-    (shopt -s dotglob; "$@") || status=1
+    (shopt -s dotglob; "${cmd[@]}") || status=1
 }
 
 function set-permissions {
@@ -130,14 +129,12 @@ function set-permissions {
     fi
 
     dcmd+=(-type d)
-    dcmd+=(-exec chmod $dmode {} \+)
-    set -- ${dcmd[@]}
-    "$@" || status=1
+    dcmd+=(-exec chmod "$dmode" {} \+)
+    "${dcmd[@]}" || status=1
 
     fcmd+=(-type f)
-    fcmd+=(-exec chmod $fmode {} \+)
-    set -- ${fcmd[@]}
-    "$@" || status=1
+    fcmd+=(-exec chmod "$fmode" {} \+)
+    "${fcmd[@]}" || status=1
 }
 
 function log-msg {

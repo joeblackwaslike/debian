@@ -32,7 +32,7 @@ function path-in-current-paths {
     local path="$1"
     local cpath
     for cpath in "${current_paths[@]}"; do
-        if [[ $cpath = $path ]]; then
+        if [[ $cpath = "$path" ]]; then
             return 0
         fi
     done
@@ -43,52 +43,28 @@ function path-not-in-current-paths {
     ! path-in-current-paths "$1"
 }
 
-function paths-from-file {
-    local file="$1"
-    local path paths
-    while read -r path || [[ -n $path ]]; do
-        path="${path//'~'/$HOME}"
-        if path-exists "$path"; then
-            paths+=($path)
-        fi
-    done <"$file"
-    echo "${paths[@]}"
-}
+function main {
+    is-directory $PH_PATHS_PATH || return 0
 
-function get-current-paths {
-    echo "${PATH//:/ }"
-}
+    local -a current_paths new_paths paths_to_add
+    local file path
 
-function get-new-paths {
-    local file
-    local new_paths=()
+    IFS=: read -ra current_paths <<<"$PATH"
+
     for file in $PH_PATHS_PATH/*; do
         [[ -f $file ]] || continue
-        new_paths+=($(paths-from-file "$file"))
+        while read -r path || [[ -n $path ]]; do
+            path="${path//'~'/$HOME}"
+            path-exists "$path" && new_paths+=("$path")
+        done <"$file"
     done
-    echo "${new_paths[@]}"
-}
 
-function merge-paths {
-    local path merged_paths
-    local paths_to_add=()
     for path in "${new_paths[@]}"; do
-        if path-not-in-current-paths "$path"; then
-            paths_to_add+=("$path")
-        fi
+        path-not-in-current-paths "$path" && paths_to_add+=("$path")
     done
-    merged_paths="${paths_to_add[@]} ${current_paths[@]}"
-    echo "${merged_paths// /:}"
-}
 
-function main {
-    local current_paths=($(get-current-paths))
-    if is-directory $PH_PATHS_PATH; then
-        local new_paths=($(get-new-paths))
-        local merged_paths=$(merge-paths)
-        merged_paths=$(echo $merged_paths | sed 's/^://')
-        echo "PATH=$merged_paths"
-    fi
+    local IFS=:
+    echo "PATH=${paths_to_add[*]}${paths_to_add:+:}${current_paths[*]}"
 }
 
 main

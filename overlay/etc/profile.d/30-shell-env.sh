@@ -1,4 +1,4 @@
-[ -z "$PS1" ] && return
+[ -z "${PS1-}" ] && return
 
 : ${TERM:=xterm-256color}
 : ${SHELL:=/bin/bash}

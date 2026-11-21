@@ -37,6 +37,12 @@ run bash -c 'mkdir -p /tmp/z; printf "%s" "/tmp/z false nobody:nogroup 0640 0750
 run bash -c 'mkdir -p /tmp/n; printf "%s" /tmp/n > /etc/paths.d/n; path-helper' | grep -q '^PATH=/tmp/n:'
 run bash -c 'echo "/tmp false nobody:nogroup 0640 0750" > /etc/fixattrs.d/t; chmod 600 /etc/fixattrs.d/t; ! gosu nobody fixattrs >/dev/null 2>&1'
 run bash -c 'export DEBIAN_FRONTEND=noninteractive; apt-get update -qq && apt-get install -y -qq --no-install-recommends libcap2-bin >/dev/null && bash -lc "linux::cap::is-enabled chown && linux::cap::is-disabled net_admin"'
+run bash -c 'mkdir "/tmp/sp ace"; ln -s "/tmp/sp ace" /tmp/lnk; echo "/tmp/lnk true nobody:nogroup 0640 0750" > /etc/fixattrs.d/t; fixattrs >/dev/null 2>&1; stat -c %U "/tmp/sp ace"' | grep -qx nobody
+run bash -c 'mkdir "/tmp/g*" /tmp/gx; echo "/tmp/g* true nobody:nogroup 0640 0750" > /etc/fixattrs.d/t; fixattrs >/dev/null 2>&1; stat -c %U "/tmp/g*" /tmp/gx' | tr '\n' ' ' | grep -qx 'nobody root '
+run bash --login -e -o pipefail -c 'echo ok' | grep -qx ok
+run bash -u -lc 'echo ok' | grep -qx ok
+run bash -c 'mkdir "/tmp/my tools"; echo "/tmp/my tools" > /etc/paths.d/s; path-helper' | grep -q '^PATH=/tmp/my tools:'
+run env PATH='/tmp/p q:/usr/bin:/bin' /usr/local/bin/path-helper | grep -q '^PATH=/tmp/p q:'
 
 run openssl version | grep -q '^OpenSSL 3'
 run bash -c 'export DEBIAN_FRONTEND=noninteractive; apt-get update 2>&1 | grep -q "Get:1 https://deb.debian.org"'
