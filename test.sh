@@ -49,7 +49,7 @@ run env PATH='/tmp/p q:/usr/bin:/bin' /usr/local/bin/path-helper | grep -q '^PAT
 run sh -lec 'echo ok' | grep -qx ok
 run bash -c 'mkdir /tmp/ok1; echo "/tmp/ok1 false nobody:nogroup 0640 0750" > /etc/fixattrs.d/t; fixattrs >/dev/null 2>&1'
 run bash -c 'echo "/tmp/missing false nobody:nogroup 0640 0750" > /etc/fixattrs.d/t; ! fixattrs >/dev/null 2>&1'
-run bash -c 'mkdir /tmp/bm; echo "/tmp/bm false nobody:nogroup zzz 0750" > /etc/fixattrs.d/t; ! fixattrs >/dev/null 2>&1; stat -c %U /tmp/bm' | grep -qx root
+run bash -c 'mkdir /tmp/bm; echo "/tmp/bm false nobody:nogroup zzz 0750" > /etc/fixattrs.d/t; ! fixattrs >/dev/null 2>&1 && stat -c %U /tmp/bm' | grep -qx root
 run bash -c 'mkdir /tmp/cm; printf "# note\n\n/tmp/cm false nobody:nogroup 0640 0750\n" > /etc/fixattrs.d/t; fixattrs >/dev/null 2>&1 && stat -c %U /tmp/cm' | grep -qx nobody
 run bash -c 'mkdir /tmp/ur; chown nobody /tmp/ur; echo "/tmp/ur false nobody:nogroup 0640 0750" > /etc/fixattrs.d/t; chmod 600 /etc/fixattrs.d/t; ! gosu nobody fixattrs >/dev/null 2>&1'
 run bash -c 'for p in /etc/ /usr/local /proc/1 /boot; do echo "$p false nobody:nogroup 0640 0750"; done > /etc/fixattrs.d/t; fixattrs >/dev/null 2>&1; stat -c %U /etc /usr/local /boot' | tr '\n' ' ' | grep -qx 'root root root '
