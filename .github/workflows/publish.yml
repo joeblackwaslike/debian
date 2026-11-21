@@ -5,21 +5,20 @@ on:
     branches: [master]
     paths-ignore:
       - "**.md"
+  workflow_dispatch:
 
 permissions:
   contents: read
-
-concurrency:
-  group: ${{ github.workflow }}
-  cancel-in-progress: false
 
 env:
   IMAGE: ${{ vars.DOCKERHUB_USERNAME }}/debian-tiny
 
 jobs:
   build:
-    name: build, test and push (${{ matrix.arch }})
+    name: build, push and test (${{ matrix.arch }})
+    if: github.ref == 'refs/heads/master'
     runs-on: ${{ matrix.runner }}
+    environment: dockerhub
     timeout-minutes: 30
     strategy:
       fail-fast: true
@@ -32,37 +31,44 @@ jobs:
             runner: ubuntu-24.04-arm
             platform: linux/arm64
     steps:
+      - name: Check Docker Hub settings
+        shell: bash
+        env:
+          USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
+          TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [ -z "$USERNAME" ] || [ -z "$TOKEN" ]; then
+            echo "::error::Set the DOCKERHUB_USERNAME repository variable and the DOCKERHUB_TOKEN secret in the dockerhub environment"
+            exit 1
+          fi
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
-
-      - name: Build image
-        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
-        with:
-          context: .
-          platforms: ${{ matrix.platform }}
-          load: true
-          tags: debian-tiny:trixie
-          cache-from: type=gha,scope=${{ matrix.arch }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.arch }}
-
-      - name: Smoke test
-        shell: bash
-        run: ./test.sh debian-tiny:trixie | tee -a "$GITHUB_STEP_SUMMARY"
 
       - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         with:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Push image by digest
+      - name: Build and push by digest
         id: push
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           platforms: ${{ matrix.platform }}
+          provenance: false
           outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=${{ matrix.arch }}
+
+      - name: Smoke test the pushed image
+        shell: bash
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          docker pull "$IMAGE@$DIGEST"
+          ./test.sh "$IMAGE@$DIGEST" | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Export digest
         shell: bash
@@ -81,8 +87,10 @@ jobs:
 
   merge:
     name: publish multi-arch tags
+    if: github.ref == 'refs/heads/master'
     needs: build
     runs-on: ubuntu-24.04
+    environment: dockerhub
     timeout-minutes: 10
     steps:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -98,14 +106,28 @@ jobs:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Check this is still the newest commit
+        id: head
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          newest=$(gh api "repos/$GITHUB_REPOSITORY/commits/master" --jq .sha)
+          if [ "$newest" = "$GITHUB_SHA" ]; then
+            echo "is_newest=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_newest=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::master has moved on to $newest, so latest and trixie keep pointing at the newer build"
+          fi
+
       - name: Compute tags
         id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: ${{ env.IMAGE }}
           tags: |
-            type=raw,value=latest
-            type=raw,value=trixie
+            type=raw,value=latest,enable=${{ steps.head.outputs.is_newest == 'true' }}
+            type=raw,value=trixie,enable=${{ steps.head.outputs.is_newest == 'true' }}
             type=sha,format=short
 
       - name: Create manifest list
@@ -124,4 +146,4 @@ jobs:
 
       - name: Inspect
         shell: bash
-        run: docker buildx imagetools inspect "$IMAGE:trixie" | tee -a "$GITHUB_STEP_SUMMARY"
+        run: docker buildx imagetools inspect "$IMAGE:sha-${GITHUB_SHA::7}" | tee -a "$GITHUB_STEP_SUMMARY"
