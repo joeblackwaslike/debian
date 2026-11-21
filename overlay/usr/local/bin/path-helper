@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# prints PATH=... with every existing directory listed in /etc/paths.d/* put in front of PATH
+# one directory per line, a leading ~ expands to $HOME, lines that are not directories are ignored
+
+readonly PH_PATHS_PATH=/etc/paths.d
+
+function in-paths {
+    local needle="$1" entry
+    shift
+    for entry in "$@"; do
+        [[ $entry = "$needle" ]] && return 0
+    done
+    return 1
+}
+
+function main {
+    [[ -d $PH_PATHS_PATH ]] || return 0
+
+    local -a current_paths paths_to_add
+    local file path
+
+    IFS=: read -ra current_paths <<<"$PATH"
+
+    for file in "$PH_PATHS_PATH"/*; do
+        [[ -f $file ]] || continue
+        while read -r path || [[ -n $path ]]; do
+            [[ $path == \~* && -z ${HOME-} ]] && continue
+            path="${path/#\~/"$HOME"}"
+            [[ -d $path && $path != *:* ]] || continue
+            in-paths "$path" "${current_paths[@]}" "${paths_to_add[@]}" || paths_to_add+=("$path")
+        done <"$file"
+    done
+
+    local IFS=:
+    local added="${paths_to_add[*]}"
+    echo "PATH=${added}${added:+${PATH:+:}}${PATH}"
+}
+
+main
