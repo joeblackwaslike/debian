@@ -38,11 +38,12 @@ docker build -t debian-tiny:trixie .
 docker buildx build --platform linux/amd64,linux/arm64 -t debian-tiny:trixie .
 ```
 
-The build needs network access and takes a few minutes. Nothing is published to a registry yet.
+The build needs network access and takes a few minutes. Every push to master that changes more than Markdown files publishes a multi-arch image (amd64 and arm64) to Docker Hub as `joeblackwaslike/debian-tiny`, tagged `latest`, `trixie` and `sha-<short commit>`. Each architecture builds on a native runner and runs `test.sh` before anything is pushed. The workflow needs the `DOCKERHUB_USERNAME` repository variable and the `DOCKERHUB_TOKEN` secret.
 
 ## Use
 
 ```sh
+docker pull joeblackwaslike/debian-tiny:trixie
 docker run --rm -it debian-tiny:trixie
 docker run --rm debian-tiny:trixie gosu nobody id -u
 ```
