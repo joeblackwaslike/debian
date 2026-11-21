@@ -61,6 +61,9 @@ function _get-container-id {
     grep -oE -m1 '[0-9a-f]{64}' /proc/1/cgroup | head -1 | grep . \
         || grep -oE -m1 'containers/[0-9a-f]{64}' /proc/self/mountinfo | head -1 | cut -d/ -f2
 }
+function clear {
+    printf '\033c'
+}
 function container-id {
     local cid
     if [[ ${1-} =~ ^(h|help)$ ]]; then

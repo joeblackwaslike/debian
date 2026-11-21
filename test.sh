@@ -63,6 +63,8 @@ run bash -uc '. /etc/profile.d/40-functions.sh; log::info x; log::m-warn y' >/de
 run env PATH=/tmp/zz:/usr/bin:/bin:/usr/sbin:/sbin bash -ic 'echo $PATH' 2>/dev/null | grep -q '^/tmp/zz:'
 run bash -c 'test "$(stat -c %a /etc/skel/.bashrc)" = 644'
 run bash -lc 'linux::cap::is-enabled chown; test $? -eq 2'
+test "$(run bash -ic 'type -t clear' 2>/dev/null)" = function
+run bash -c 'echo "/var/lock false nobody:nogroup 0640 0750" > /etc/fixattrs.d/t; fixattrs >/dev/null 2>&1; stat -c %U /run/lock' | grep -qx root
 
 run openssl version | grep -q '^OpenSSL 3'
 run bash -c 'export DEBIAN_FRONTEND=noninteractive; apt-get update 2>&1 | grep -q "Get:1 https://deb.debian.org"'

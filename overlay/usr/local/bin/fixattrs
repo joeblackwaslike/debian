@@ -16,14 +16,15 @@
 
 # A rule with recursive=false changes only the path itself: dmode if it is a directory, fmode if it is a file.
 # The protected lists stop a typo from handing a whole system directory to someone else.
-# They refuse those directories themselves, not what is under them, and are not a security boundary.
+# PROTECTED_ROOTS refuse everything under /proc, /sys, /dev and /boot. PROTECTED_PATHS refuse only the listed directories
+# themselves, after symlinks are resolved. Neither is a security boundary.
 
 source /etc/profile.d/40-functions.sh
 
 readonly FIXATTRS_PATH=/etc/fixattrs.d
 status=0
 readonly PROTECTED_ROOTS=(/proc /sys /dev /boot)
-readonly PROTECTED_PATHS=(/etc /var /lib /run /bin /home /mnt /usr /sbin /lib /lib64 /usr/bin /usr/include /usr/lib /usr/local /usr/sbin /usr/share /usr/src /var/lib /var/local /var/log /var/opt /var/lock /var/run)
+readonly PROTECTED_PATHS=(/etc /var /lib /run /bin /home /mnt /usr /sbin /lib /lib64 /usr/bin /usr/include /usr/lib /usr/local /usr/sbin /usr/share /usr/src /var/lib /var/local /var/log /var/opt /var/lock /var/run /run/lock)
 
 function is-directory {
     [[ -d "$1" ]]
