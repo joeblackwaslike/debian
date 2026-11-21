@@ -71,6 +71,7 @@ jobs:
         env:
           DIGEST: ${{ steps.push.outputs.digest }}
         run: |
+          : "${DIGEST:?build produced no digest}"
           docker pull "$IMAGE@$DIGEST"
           ./test.sh "$IMAGE@$DIGEST" | tee -a "$GITHUB_STEP_SUMMARY"
 
@@ -80,7 +81,6 @@ jobs:
           DIGEST: ${{ steps.push.outputs.digest }}
         run: |
           mkdir -p "$RUNNER_TEMP/digests"
-          : "${DIGEST:?build produced no digest}"
           touch "$RUNNER_TEMP/digests/${DIGEST#sha256:}"
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
