@@ -1,4 +1,4 @@
-# debian-tiny (Debian 13 trixie)
+# debian (Debian 13 trixie)
 
 [![CI](https://github.com/joeblackwaslike/debian/actions/workflows/ci.yml/badge.svg)](https://github.com/joeblackwaslike/debian/actions/workflows/ci.yml)
 
@@ -9,7 +9,7 @@ Measured on arm64 against `debian:trixie-slim`:
 | | Compressed | On disk |
 |---|---|---|
 | `debian:trixie-slim` | 30.2MB | 104MB |
-| debian-tiny | 22.5MB | 62MB |
+| debian | 22.5MB | 62MB |
 
 The amd64 build is about the same size. Before openssl was added back it measured 22.8MB compressed and 57MB on disk, against 29.9MB and 83MB for the amd64 slim image. I have not re-measured it since.
 
@@ -38,7 +38,7 @@ docker build -t debian-tiny:trixie .
 docker buildx build --platform linux/amd64,linux/arm64 -t debian-tiny:trixie .
 ```
 
-The build needs network access and takes a few minutes. Every push to master that changes more than Markdown files publishes a multi-arch image (amd64 and arm64) to Docker Hub as `joeblackwaslike/debian`. Every publish gets `latest`, `trixie` and a `sha-<short commit>` tag. Runs go one at a time, and when several pushes land while one is running, the older waiting runs are cancelled, so their `sha-` tags are never published. Re-running an old run from the Actions tab republishes that commit as `latest`. Each architecture builds on a native runner without a cache, and the pushed image is pulled back and tested with `test.sh` before any tag is created. You can also run it by hand from the Actions tab to pick up new Debian security updates. It needs the `DOCKERHUB_USERNAME` repository variable and a `DOCKERHUB_TOKEN` secret in the `dockerhub` environment.
+The build needs network access and takes a few minutes. Every push to master that changes more than Markdown files publishes a multi-arch image (amd64 and arm64) to Docker Hub as `joeblackwaslike/debian`. Every publish gets `latest`, `trixie` and a `sha-<short commit>` tag. Runs go one at a time, and when several pushes land while one is running, the older waiting runs are cancelled, so their `sha-` tags are never published. Re-running an old run from the Actions tab republishes that commit as `latest`. Each architecture builds on a native runner without a cache, and the pushed image is pulled back and tested with `test.sh` before any tag is created. You can also run it by hand from the Actions tab to pick up new Debian security updates. `dockerhub-readme.yml` copies this README to the Docker Hub page whenever it changes on master, and you can run it by hand from the Actions tab. Both workflows need the `DOCKERHUB_USERNAME` repository variable and a `DOCKERHUB_TOKEN` secret in the `dockerhub` environment.
 
 ## Use
 
