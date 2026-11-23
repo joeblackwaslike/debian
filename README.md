@@ -34,8 +34,8 @@ dumb-init and gosu are downloaded at build time and checked against pinned sha25
 ## Build
 
 ```sh
-docker build -t debian-tiny:trixie .
-docker buildx build --platform linux/amd64,linux/arm64 -t debian-tiny:trixie .
+docker build -t debian:trixie .
+docker buildx build --platform linux/amd64,linux/arm64 -t debian:trixie .
 ```
 
 The build needs network access and takes a few minutes. Every push to master that changes more than Markdown files publishes a multi-arch image (amd64 and arm64) to Docker Hub as `joeblackwaslike/debian`. Every publish gets `latest`, `trixie` and a `sha-<short commit>` tag. Runs go one at a time, and when several pushes land while one is running, the older waiting runs are cancelled, so their `sha-` tags are never published. Re-running an old run from the Actions tab republishes that commit as `latest`. Each architecture builds on a native runner without a cache, and the pushed image is pulled back and tested with `test.sh` before any tag is created. You can also run it by hand from the Actions tab to pick up new Debian security updates. `dockerhub-readme.yml` copies this README to the Docker Hub page whenever it changes on master, and you can run it by hand from the Actions tab. Both workflows need the `DOCKERHUB_USERNAME` repository variable and a `DOCKERHUB_TOKEN` secret in the `dockerhub` environment.
@@ -53,7 +53,7 @@ The entrypoint is `dumb-init --` and the default command is `bash`.
 ## Test
 
 ```sh
-./test.sh debian-tiny:trixie
+./test.sh debian:trixie
 ```
 
 The script runs the image and checks that bash and dumb-init run, `dpkg --audit` is clean, and apt can update and install jq, curl, tzdata, cron and adduser. It also checks gosu, `--user`, `policy-rc.d`, gzipped indexes, autoremove, that installs leave no `.deb` files or binary caches behind, openssl, `path-helper`, `fixattrs`, the interactive prompt and aliases, `container-id`, an HTTPS apt fetch, certificate verification (github.com loads, a self-signed host is rejected) and SIGTERM forwarding. It ends by printing both sizes. The SIGTERM check failed once when I ran the amd64 image under emulation on an arm64 Mac, and I did not look into why.
