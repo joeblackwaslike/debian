@@ -9,6 +9,7 @@ The repo now builds a single Debian 13 (trixie) image from its root.
 * `test.sh` is the smoke test. goss, the entrypoint.d layout, and the kube/kazoo/erlang container-utils scripts and helpers are not ported.
 * GitHub Actions replaces Travis: every push to master and every pull request builds the image on native amd64 and arm64 runners and runs `test.sh`. Actions are pinned by commit SHA, with a monthly Dependabot update.
 * `publish.yml` pushes a multi-arch image to Docker Hub as `joeblackwaslike/debian` on every push to master that changes more than Markdown files, after testing each architecture's image.
+* `dockerhub-readme.yml` copies the README to the Docker Hub page when it changes on master, or when run by hand.
 * Removed the jessie and stretch build (`base-repo/`, `scripts/`, `templates/`, `tests/`, the Makefile and `.travis.yml`). It depended on TurnKey's fab and chanko tools and does not run on trixie. It is still in git history at 99d68eb.
 
 ## 0.1.2
