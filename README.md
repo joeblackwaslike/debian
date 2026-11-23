@@ -38,14 +38,14 @@ docker build -t debian-tiny:trixie .
 docker buildx build --platform linux/amd64,linux/arm64 -t debian-tiny:trixie .
 ```
 
-The build needs network access and takes a few minutes. Every push to master that changes more than Markdown files publishes a multi-arch image (amd64 and arm64) to Docker Hub as `joeblackwaslike/debian-tiny`. Every publish gets `latest`, `trixie` and a `sha-<short commit>` tag. Runs go one at a time, and when several pushes land while one is running, the older waiting runs are cancelled, so their `sha-` tags are never published. Re-running an old run from the Actions tab republishes that commit as `latest`. Each architecture builds on a native runner without a cache, and the pushed image is pulled back and tested with `test.sh` before any tag is created. You can also run it by hand from the Actions tab to pick up new Debian security updates. It needs the `DOCKERHUB_USERNAME` repository variable and a `DOCKERHUB_TOKEN` secret in the `dockerhub` environment.
+The build needs network access and takes a few minutes. Every push to master that changes more than Markdown files publishes a multi-arch image (amd64 and arm64) to Docker Hub as `joeblackwaslike/debian`. Every publish gets `latest`, `trixie` and a `sha-<short commit>` tag. Runs go one at a time, and when several pushes land while one is running, the older waiting runs are cancelled, so their `sha-` tags are never published. Re-running an old run from the Actions tab republishes that commit as `latest`. Each architecture builds on a native runner without a cache, and the pushed image is pulled back and tested with `test.sh` before any tag is created. You can also run it by hand from the Actions tab to pick up new Debian security updates. It needs the `DOCKERHUB_USERNAME` repository variable and a `DOCKERHUB_TOKEN` secret in the `dockerhub` environment.
 
 ## Use
 
 ```sh
-docker pull joeblackwaslike/debian-tiny:trixie
-docker run --rm -it joeblackwaslike/debian-tiny:trixie
-docker run --rm joeblackwaslike/debian-tiny:trixie gosu nobody id -u
+docker pull joeblackwaslike/debian:trixie
+docker run --rm -it joeblackwaslike/debian:trixie
+docker run --rm joeblackwaslike/debian:trixie gosu nobody id -u
 ```
 
 The entrypoint is `dumb-init --` and the default command is `bash`.
