@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  IMAGE: ${{ vars.DOCKERHUB_USERNAME }}/debian-tiny
+  IMAGE: ${{ vars.DOCKERHUB_USERNAME }}/debian
 
 jobs:
   build:
